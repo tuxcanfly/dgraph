@@ -442,6 +442,12 @@ func newGraph(ctx context.Context, gq *gql.GraphQuery) (*SubGraph, error) {
 		sg.SrcUIDs = &task.List{Uids: gq.UID}
 		sg.uidMatrix = []*task.List{&task.List{Uids: gq.UID}}
 	}
+	if gq.IsCount {
+		sg.Params.DoCount = true
+		if len(sg.Children) != 0 {
+			return nil, x.Errorf("Cannot have child predicates with count")
+		}
+	}
 	sg.values = createNilValuesList(1)
 	// Copy roots filter.
 	if gq.Filter != nil {
@@ -853,23 +859,33 @@ func (p *jsonOutputNode) IsEmpty() bool {
 func (sg *SubGraph) ToJSON(l *Latency) ([]byte, error) {
 	var seedNode *jsonOutputNode
 	n := seedNode.New("_root_")
-	for _, uid := range sg.DestUIDs.Uids {
-		// For the root, the name is stored in Alias, not Attr.
-		n1 := seedNode.New(sg.Params.Alias)
-		if sg.Params.GetUID || sg.Params.isDebug {
-			n1.SetUID(uid)
-		}
 
-		if err := sg.preTraverse(uid, n1); err != nil {
-			if err.Error() == "_INV_" {
+	if sg.Params.DoCount {
+		n1 := seedNode.New(sg.Params.Alias)
+		c := types.ValueForType(types.Int32ID)
+		c.Value = int32(len(sg.counts))
+		n1.AddValue("_count_", c)
+		n.AddChild(sg.Params.Alias, n1)
+	} else {
+
+		for _, uid := range sg.DestUIDs.Uids {
+			// For the root, the name is stored in Alias, not Attr.
+			n1 := seedNode.New(sg.Params.Alias)
+			if sg.Params.GetUID || sg.Params.isDebug {
+				n1.SetUID(uid)
+			}
+
+			if err := sg.preTraverse(uid, n1); err != nil {
+				if err.Error() == "_INV_" {
+					continue
+				}
+				return nil, err
+			}
+			if n1.IsEmpty() {
 				continue
 			}
-			return nil, err
+			n.AddChild(sg.Params.Alias, n1)
 		}
-		if n1.IsEmpty() {
-			continue
-		}
-		n.AddChild(sg.Params.Alias, n1)
 	}
 	res := n.(*jsonOutputNode).data
 	if sg.Params.isDebug {

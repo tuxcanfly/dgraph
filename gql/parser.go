@@ -400,6 +400,16 @@ func getQuery(it *lex.ItemIterator) (gq *GraphQuery, rerr error) {
 		return nil, rerr
 	}
 
+	if gq.IsCount {
+		it.Next()
+		item := it.Item()
+		if item.Typ == itemLeftCurl {
+			return nil, x.Errorf("Cannot have child predicates with count")
+		} else if item.Typ != itemRightCurl {
+			return nil, x.Errorf("Missing right curl")
+		}
+		return gq, nil
+	}
 	var seenFilter bool
 L:
 	// Recurse to deeper levels through godeep.
@@ -927,13 +937,27 @@ func parseID(gq *GraphQuery, val string) error {
 
 // getRoot gets the root graph query object after parsing the args.
 func getRoot(it *lex.ItemIterator) (gq *GraphQuery, rerr error) {
+	var isCount bool
 	gq = &GraphQuery{
 		Args: make(map[string]string),
 	}
+
+L:
 	it.Next()
 	item := it.Item()
 	if item.Typ != itemName {
 		return nil, x.Errorf("Expected some name. Got: %v", item)
+	}
+
+	if !isCount && item.Val == "count" {
+		isCount = true
+		it.Next()
+		item := it.Item()
+		if item.Typ != itemLeftRound {
+			return nil, x.Errorf("Expected left round after count.")
+		}
+		gq.IsCount = true
+		goto L
 	}
 
 	gq.Alias = item.Val
@@ -984,6 +1008,13 @@ func getRoot(it *lex.ItemIterator) (gq *GraphQuery, rerr error) {
 		return nil, x.Errorf("Unexpected root argument. Got: %v", peekItems)
 	}
 
+	if isCount {
+		it.Next()
+		item := it.Item()
+		if item.Typ != itemRightRound {
+			return nil, x.Errorf("Missing right round for count.")
+		}
+	}
 	return gq, nil
 }
 

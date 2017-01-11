@@ -1997,6 +1997,20 @@ func TestGenerator(t *testing.T) {
 	require.JSONEq(t, `{"me":[{"gender":"female","name":"Michonne"}]}`, js)
 }
 
+func TestGeneratorMultiRootCount(t *testing.T) {
+	dir1, dir2, ps := populateGraph(t)
+	defer ps.Close()
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	query := `
+    {
+      count(me(anyof("name", "Michonne Rick Glenn")))
+    }
+  `
+	js := processToJSON(t, query)
+	require.JSONEq(t, `{"me":[{"_count_":3}]}`, js)
+}
+
 func TestGeneratorMultiRoot(t *testing.T) {
 	dir1, dir2, ps := populateGraph(t)
 	defer ps.Close()
