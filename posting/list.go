@@ -30,8 +30,8 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/couchbase/moss"
 	"github.com/dgryski/go-farm"
-	"github.com/syndtr/goleveldb/leveldb"
 
 	"github.com/dgraph-io/dgraph/task"
 	"github.com/dgraph-io/dgraph/types"
@@ -63,7 +63,8 @@ type List struct {
 	ghash       uint64
 	pbuffer     unsafe.Pointer
 	mlayer      []*types.Posting // mutations
-	pstore      *leveldb.DB      // postinglist store
+	pstore      *moss.Store      // postinglist store
+	col         moss.Collection
 	lastCompact time.Time
 	deleteMe    int32 // Using atomic for this, to avoid expensive SetForDeletion operation.
 	refcount    int32
@@ -89,11 +90,12 @@ var listPool = sync.Pool{
 	},
 }
 
-func getNew(key []byte, pstore *leveldb.DB) *List {
+func getNew(key []byte, pstore *moss.Store, c moss.Collection) *List {
 	l := listPool.Get().(*List)
 	*l = List{}
 	l.key = key
 	l.pstore = pstore
+	l.col = c
 	l.ghash = farm.Fingerprint64(key)
 	l.refcount = 1
 	return l
@@ -180,7 +182,12 @@ func (l *List) getPostingList(loop int) *types.PostingList {
 		x.AssertTrue(l.pstore != nil)
 		plist = new(types.PostingList)
 
-		v, err := l.pstore.Get(l.key, nil)
+		ss, err := l.col.Snapshot()
+		defer ss.Close()
+		x.Check(err)
+		fmt.Println(err)
+
+		v, err := ss.Get(l.key, moss.ReadOptions{})
 		if err != nil && v != nil {
 			x.Checkf(plist.Unmarshal(v), "Unable to Unmarshal PostingList from store")
 		}

@@ -33,8 +33,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/couchbase/moss"
 	"github.com/dgryski/go-farm"
-	"github.com/syndtr/goleveldb/leveldb"
 
 	"github.com/dgraph-io/dgraph/types"
 	"github.com/dgraph-io/dgraph/x"
@@ -317,16 +317,18 @@ func getMemUsage() int {
 var (
 	stopTheWorld sync.RWMutex
 	lhmap        *listMap
-	pstore       *leveldb.DB
+	pstore       *moss.Store
+	c            moss.Collection
 	syncCh       chan syncEntry
 	dirtyChan    chan uint64 // All dirty posting list keys are pushed here.
 	marks        *syncMarks
 )
 
 // Init initializes the posting lists package, the in memory and dirty list hash.
-func Init(ps *leveldb.DB) {
+func Init(ps *moss.Store, col moss.Collection) {
 	marks = new(syncMarks)
 	pstore = ps
+	c = col
 	lhmap = newShardedListMap(*lhmapNumShards)
 	dirtyChan = make(chan uint64, 10000)
 	fmt.Println("Starting commit routine.")
@@ -368,7 +370,7 @@ func GetOrCreate(key []byte, group uint32) (rlist *List, decr func()) {
 		return lp, lp.decr
 	}
 
-	l := getNew(key, pstore) // This retrieves a new *List and sets refcount to 1.
+	l := getNew(key, pstore, c) // This retrieves a new *List and sets refcount to 1.
 	lp = lhmap.PutIfMissing(fp, l)
 	// We are always going to return lp to caller, whether it is l or not. So, let's
 	// increment its reference counter.
@@ -379,22 +381,26 @@ func GetOrCreate(key []byte, group uint32) (rlist *List, decr func()) {
 		l.decr()
 	}
 	lp.water = marks.Get(group)
-	pk := x.Parse(key)
+	//pk := x.Parse(key)
 
 	// This replaces "TokensTable". The idea is that we want to quickly add the
 	// index key to the data store, with essentially an empty value. We just need
 	// the keys for filtering / sorting.
-	if l == lp && pk.IsIndex() {
-		// Lock before entering goroutine. Otherwise, some tests in query will fail.
-		l.Lock()
-		go func(key []byte) {
-			defer l.Unlock()
-			v, err := pstore.Get(key, nil)
-			if err != nil || v == nil {
-				x.Check(pstore.Put(key, dummyPostingList, nil))
-			}
-		}(key)
-	}
+	/*
+		if l == lp && pk.IsIndex() {
+			// Lock before entering goroutine. Otherwise, some tests in query will fail.
+			l.Lock()
+			go func(key []byte) {
+				defer l.Unlock()
+				ss, err := (*l.c).Snapshot()
+				defer ss.Close()
+				v, err := ss.Get(key, moss.ReadOptions{})
+				if err != nil || v == nil {
+					x.Check(pstore.Set(key, dummyPostingList, nil))
+				}
+			}(key)
+		}
+	*/
 	return lp, lp.decr
 }
 
@@ -457,7 +463,10 @@ func batchSync() {
 	var entries []syncEntry
 	var loop uint64
 
-	batch := new(leveldb.Batch)
+	fmt.Println(c, "****")
+	batch, err := c.NewBatch(0, 0)
+	x.Check(err)
+	defer batch.Close()
 	for {
 		select {
 		case e := <-syncCh:
@@ -470,9 +479,9 @@ func batchSync() {
 				loop++
 				fmt.Printf("[%4d] Writing batch of size: %v\n", loop, len(entries))
 				for _, e := range entries {
-					batch.Put(e.key, e.val)
+					batch.Set(e.key, e.val)
 				}
-				x.Checkf(pstore.Write(batch, nil), "Error while doing a batch write to BoltDB")
+				x.Checkf(c.ExecuteBatch(batch, moss.WriteOptions{}), "Error while doing a batch write to moss")
 
 				for _, e := range entries {
 					e.sw.Done()

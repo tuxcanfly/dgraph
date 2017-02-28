@@ -42,6 +42,7 @@ import (
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 
+	"github.com/couchbase/moss"
 	"github.com/dgraph-io/dgraph/gql"
 	"github.com/dgraph-io/dgraph/group"
 	"github.com/dgraph-io/dgraph/posting"
@@ -54,7 +55,6 @@ import (
 	"github.com/dgraph-io/dgraph/worker"
 	"github.com/dgraph-io/dgraph/x"
 	"github.com/soheilhy/cmux"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 var (
@@ -732,9 +732,15 @@ func main() {
 	x.Init()
 	checkFlagsAndInitDirs()
 
-	db, err := leveldb.OpenFile("posting.db", nil)
-	x.Checkf(err, "While opening boltdb")
+	db, collection, err := moss.OpenStoreCollection(*postingDir,
+		moss.StoreOptions{}, moss.StorePersistOptions{}) //leveldb.OpenFile("posting.db", nil)
+	x.Checkf(err, "While opening moss")
+	if err != nil || collection == nil || db == nil {
+		x.Errorf("expected open empty store collection to work")
+	}
 
+	fmt.Println(collection, db)
+	defer collection.Close()
 	defer db.Close()
 
 	if len(*schemaFile) > 0 {
@@ -743,8 +749,8 @@ func main() {
 	}
 	// Posting will initialize index which requires schema. Hence, initialize
 	// schema before calling posting.Init().
-	posting.Init(db)
-	worker.Init(db)
+	posting.Init(db, collection)
+	worker.Init(db, collection)
 	x.Check(group.ParseGroupConfig(*gconf))
 
 	// Setup external communication.

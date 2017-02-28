@@ -25,7 +25,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/couchbase/moss"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -36,11 +36,13 @@ var (
 		"Port used by worker for internal communication.")
 	backupPath = flag.String("backup", "backup",
 		"Folder in which to store backups.")
-	pstore *leveldb.DB
+	pstore *moss.Store
+	c      moss.Collection
 )
 
-func Init(ps *leveldb.DB) {
+func Init(ps *moss.Store, col moss.Collection) {
 	pstore = ps
+	c = col
 }
 
 // grpcWorker struct implements the gRPC server interface.
