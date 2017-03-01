@@ -482,6 +482,8 @@ func batchSync() {
 					batch.Set(e.key, e.val)
 				}
 				x.Checkf(c.ExecuteBatch(batch, moss.WriteOptions{}), "Error while doing a batch write to moss")
+				batch, err = c.NewBatch(0, 0)
+				x.Check(err)
 
 				for _, e := range entries {
 					e.sw.Done()

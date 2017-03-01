@@ -185,7 +185,6 @@ func (l *List) getPostingList(loop int) *types.PostingList {
 		ss, err := l.col.Snapshot()
 		defer ss.Close()
 		x.Check(err)
-		fmt.Println(err)
 
 		v, err := ss.Get(l.key, moss.ReadOptions{})
 		if err != nil && v != nil {
