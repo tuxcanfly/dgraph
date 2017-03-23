@@ -327,51 +327,51 @@ func processTask(q *taskp.Query, gid uint32) (*taskp.Result, error) {
 		out.UidMatrix = append(out.UidMatrix, uidList)
 	}
 
-	if srcFn.fnType == CompareScalarFn && srcFn.isCompareAtRoot {
-		it := pstore.NewIterator()
-		defer it.Close()
-		pk := x.Parse(x.DataKey(q.Attr, 0))
-		dataPrefix := pk.DataPrefix()
-		if q.Reverse {
-			pk = x.Parse(x.ReverseKey(q.Attr, 0))
-			dataPrefix = pk.ReversePrefix()
-		}
+	//	if srcFn.fnType == CompareScalarFn && srcFn.isCompareAtRoot {
+	//		it := pstore.NewIterator()
+	//		defer it.Close()
+	//		pk := x.Parse(x.DataKey(q.Attr, 0))
+	//		dataPrefix := pk.DataPrefix()
+	//		if q.Reverse {
+	//			pk = x.Parse(x.ReverseKey(q.Attr, 0))
+	//			dataPrefix = pk.ReversePrefix()
+	//		}
 
-		for it.Seek(dataPrefix); it.ValidForPrefix(dataPrefix); it.Next() {
-			x.AssertTruef(pk.Attr == q.Attr,
-				"Invalid key obtained for comparison")
-			key := it.Key().Data()
-			pl, decr := posting.GetOrUnmarshal(key, it.Value().Data(), gid)
-			count := int64(pl.Length(0))
-			decr()
-			if EvalCompare(srcFn.fname, count, srcFn.threshold) {
-				pk := x.Parse(key)
-				// TODO: Look if we want to put these UIDs in one list before
-				// passing it back to query package.
-				tlist := &taskp.List{[]uint64{pk.Uid}}
-				out.UidMatrix = append(out.UidMatrix, tlist)
-			}
-		}
-	}
+	//		for it.Seek(dataPrefix); it.ValidForPrefix(dataPrefix); it.Next() {
+	//			x.AssertTruef(pk.Attr == q.Attr,
+	//				"Invalid key obtained for comparison")
+	//			key := it.Key().Data()
+	//			pl, decr := posting.GetOrUnmarshal(key, it.Value().Data(), gid)
+	//			count := int64(pl.Length(0))
+	//			decr()
+	//			if EvalCompare(srcFn.fname, count, srcFn.threshold) {
+	//				pk := x.Parse(key)
+	//				// TODO: Look if we want to put these UIDs in one list before
+	//				// passing it back to query package.
+	//				tlist := &taskp.List{[]uint64{pk.Uid}}
+	//				out.UidMatrix = append(out.UidMatrix, tlist)
+	//			}
+	//		}
+	//	}
 
-	if srcFn.fnType == RegexFn {
-		// Go through the indexkeys for the predicate and match them with
-		// the regex matcher.
-		it := pstore.NewIterator()
-		defer it.Close()
-		prefixKey := x.IndexKey(q.Attr, string(exactTok.Identifier()))
-		for it.Seek(prefixKey); it.ValidForPrefix(prefixKey); it.Next() {
-			key := it.Key().Data()
-			pk := x.Parse(key)
-			x.AssertTrue(pk.Attr == q.Attr)
-			term := pk.Term[1:] // skip the first byte which is tokenizer prefix.
-			if srcFn.regex.MatchString(term) {
-				pl, decr := posting.GetOrUnmarshal(key, it.Value().Data(), gid)
-				out.UidMatrix = append(out.UidMatrix, pl.Uids(opts))
-				decr()
-			}
-		}
-	}
+	//	if srcFn.fnType == RegexFn {
+	//		// Go through the indexkeys for the predicate and match them with
+	//		// the regex matcher.
+	//		it := pstore.NewIterator()
+	//		defer it.Close()
+	//		prefixKey := x.IndexKey(q.Attr, string(exactTok.Identifier()))
+	//		for it.Seek(prefixKey); it.ValidForPrefix(prefixKey); it.Next() {
+	//			key := it.Key().Data()
+	//			pk := x.Parse(key)
+	//			x.AssertTrue(pk.Attr == q.Attr)
+	//			term := pk.Term[1:] // skip the first byte which is tokenizer prefix.
+	//			if srcFn.regex.MatchString(term) {
+	//				pl, decr := posting.GetOrUnmarshal(key, it.Value().Data(), gid)
+	//				out.UidMatrix = append(out.UidMatrix, pl.Uids(opts))
+	//				decr()
+	//			}
+	//		}
+	//	}
 
 	if srcFn.fnType == CompareAttrFn && len(srcFn.tokens) > 0 &&
 		srcFn.ineqValueToken == srcFn.tokens[0] {

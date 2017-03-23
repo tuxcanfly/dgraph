@@ -24,15 +24,18 @@ import (
 
 	"github.com/dgraph-io/dgraph/group"
 	"github.com/dgraph-io/dgraph/protos/typesp"
-	"github.com/dgraph-io/dgraph/store"
+	//	"github.com/dgraph-io/dgraph/store"
 	"github.com/dgraph-io/dgraph/tok"
 	"github.com/dgraph-io/dgraph/types"
 	"github.com/dgraph-io/dgraph/x"
+
+	"github.com/dgraph-io/badger/db"
 )
 
 var (
 	pstate *state
-	pstore *store.Store
+	//	pstore *store.Store
+	pstore *db.DB
 	syncCh chan SyncEntry
 )
 
@@ -244,7 +247,8 @@ func (s *stateGroup) isReversed(pred string) bool {
 	return false
 }
 
-func Init(ps *store.Store) {
+//func Init(ps *store.Store) {
+func Init(ps *db.DB) {
 	pstore = ps
 	syncCh = make(chan SyncEntry, 10000)
 	reset()
@@ -255,40 +259,40 @@ func Init(ps *store.Store) {
 // This is used on server start to load schema for all groups, avoid repeated
 // query to disk if we have large number of groups
 func LoadFromDb(gid uint32) error {
-	prefix := x.SchemaPrefix()
-	itr := pstore.NewIterator()
-	defer itr.Close()
+	//	prefix := x.SchemaPrefix()
+	//	itr := pstore.NewIterator()
+	//	defer itr.Close()
 
-	for itr.Seek(prefix); itr.ValidForPrefix(prefix); itr.Next() {
-		key := itr.Key().Data()
-		attr := x.Parse(key).Attr
-		data := itr.Value().Data()
-		var s typesp.Schema
-		x.Checkf(s.Unmarshal(data), "Error while loading schema from db")
-		if group.BelongsTo(attr) != gid {
-			continue
-		}
-		State().Set(attr, s)
-	}
+	//	for itr.Seek(prefix); itr.ValidForPrefix(prefix); itr.Next() {
+	//		key := itr.Key().Data()
+	//		attr := x.Parse(key).Attr
+	//		data := itr.Value().Data()
+	//		var s typesp.Schema
+	//		x.Checkf(s.Unmarshal(data), "Error while loading schema from db")
+	//		if group.BelongsTo(attr) != gid {
+	//			continue
+	//		}
+	//		State().Set(attr, s)
+	//	}
 	return nil
 }
 
 func Refresh(groupId uint32) error {
-	prefix := x.SchemaPrefix()
-	itr := pstore.NewIterator()
-	defer itr.Close()
+	//	prefix := x.SchemaPrefix()
+	//	itr := pstore.NewIterator()
+	//	defer itr.Close()
 
-	for itr.Seek(prefix); itr.ValidForPrefix(prefix); itr.Next() {
-		key := itr.Key().Data()
-		attr := x.Parse(key).Attr
-		if group.BelongsTo(attr) != groupId {
-			continue
-		}
-		data := itr.Value().Data()
-		var s typesp.Schema
-		x.Checkf(s.Unmarshal(data), "Error while loading schema from db")
-		State().Set(attr, s)
-	}
+	//	for itr.Seek(prefix); itr.ValidForPrefix(prefix); itr.Next() {
+	//		key := itr.Key().Data()
+	//		attr := x.Parse(key).Attr
+	//		if group.BelongsTo(attr) != groupId {
+	//			continue
+	//		}
+	//		data := itr.Value().Data()
+	//		var s typesp.Schema
+	//		x.Checkf(s.Unmarshal(data), "Error while loading schema from db")
+	//		State().Set(attr, s)
+	//	}
 
 	return nil
 }
@@ -318,8 +322,9 @@ func batchSync() {
 	var entries []SyncEntry
 	var loop uint64
 
-	b := pstore.NewWriteBatch()
-	defer b.Destroy()
+	//	b := pstore.NewWriteBatch()
+	//	defer b.Destroy()
+	b := db.NewWriteBatch(0)
 
 	for {
 		select {
@@ -338,7 +343,8 @@ func batchSync() {
 					x.Checkf(err, "Error while marshalling schema description")
 					b.Put(x.SchemaKey(e.Attr), val)
 				}
-				x.Checkf(pstore.WriteBatch(b), "Error while writing to RocksDB.")
+				//				x.Checkf(pstore.WriteBatch(b), "Error while writing to RocksDB.")
+				x.Check(pstore.Write(b))
 				b.Clear()
 
 				entriesMap := make(map[chan x.Mark][]uint64)

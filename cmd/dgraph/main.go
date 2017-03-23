@@ -53,12 +53,14 @@ import (
 	"github.com/dgraph-io/dgraph/query"
 	"github.com/dgraph-io/dgraph/rdf"
 	"github.com/dgraph-io/dgraph/schema"
-	"github.com/dgraph-io/dgraph/store"
+	//	"github.com/dgraph-io/dgraph/store"
 	"github.com/dgraph-io/dgraph/tok"
 	"github.com/dgraph-io/dgraph/types"
 	"github.com/dgraph-io/dgraph/worker"
 	"github.com/dgraph-io/dgraph/x"
 	"github.com/soheilhy/cmux"
+
+	"github.com/dgraph-io/badger/db"
 )
 
 var (
@@ -821,9 +823,10 @@ func main() {
 
 	// All the writes to posting store should be synchronous. We use batched writers
 	// for posting lists, so the cost of sync writes is amortized.
-	ps, err := store.NewSyncStore(*postingDir)
-	x.Checkf(err, "Error initializing postings store")
-	defer ps.Close()
+	//	ps, err := store.NewSyncStore(*postingDir)
+	//	x.Checkf(err, "Error initializing postings store")
+	ps := db.NewDB(db.DefaultDBOptions)
+	//	defer ps.Close()
 
 	x.Check(group.ParseGroupConfig(*gconf))
 	schema.Init(ps)

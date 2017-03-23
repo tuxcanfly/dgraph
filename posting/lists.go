@@ -36,8 +36,10 @@ import (
 	"github.com/dgryski/go-farm"
 
 	"github.com/dgraph-io/dgraph/protos/typesp"
-	"github.com/dgraph-io/dgraph/store"
+	//	"github.com/dgraph-io/dgraph/store"
 	"github.com/dgraph-io/dgraph/x"
+
+	"github.com/dgraph-io/badger/db"
 )
 
 var (
@@ -379,15 +381,17 @@ type fingerPrint struct {
 
 var (
 	stopTheWorld x.SafeMutex
-	pstore       *store.Store
-	syncCh       chan syncEntry
-	dirtyChan    chan fingerPrint // All dirty posting list keys are pushed here.
-	marks        *syncMarks
-	lhmaps       *listMaps
+	//	pstore       *store.Store
+	pstore    *db.DB
+	syncCh    chan syncEntry
+	dirtyChan chan fingerPrint // All dirty posting list keys are pushed here.
+	marks     *syncMarks
+	lhmaps    *listMaps
 )
 
 // Init initializes the posting lists package, the in memory and dirty list hash.
-func Init(ps *store.Store) {
+//func Init(ps *store.Store) {
+func Init(ps *db.DB) {
 	marks = new(syncMarks)
 	pstore = ps
 	lhmaps = new(listMaps)
@@ -446,14 +450,17 @@ func GetOrCreate(key []byte, group uint32) (rlist *List, decr func()) {
 		l.Lock()
 		go func(key []byte) {
 			defer l.Unlock()
-			slice, err := pstore.Get(key)
-			x.Check(err)
-			if slice.Size() == 0 {
-				x.Check(pstore.SetOne(key, dummyPostingList))
+			//			slice, err := pstore.Get(key)
+			slice := pstore.Get(key)
+			//			x.Check(err)
+			//			if slice.Size() == 0 {
+			if len(slice) == 0 {
+				//				x.Check(pstore.SetOne(key, dummyPostingList))
+				pstore.Put(key, dummyPostingList)
 			}
-			if slice != nil {
-				slice.Free() // Remember to free.
-			}
+			//			if slice != nil {
+			//				slice.Free() // Remember to free.
+			//			}
 		}(key)
 	}
 	return lp, lp.decr
@@ -553,8 +560,9 @@ func batchSync() {
 	var entries []syncEntry
 	var loop uint64
 
-	b := pstore.NewWriteBatch()
-	defer b.Destroy()
+	//	b := pstore.NewWriteBatch()
+	//	defer b.Destroy()
+	b := db.NewWriteBatch(0)
 
 	for {
 		select {
@@ -571,7 +579,8 @@ func batchSync() {
 				for _, e := range entries {
 					b.Put(e.key, e.val)
 				}
-				x.Checkf(pstore.WriteBatch(b), "Error while writing to RocksDB.")
+				//				x.Checkf(pstore.WriteBatch(b), "Error while writing to RocksDB.")
+				x.Checkf(pstore.Write(b), "Error writing to badger")
 				b.Clear()
 
 				for _, e := range entries {

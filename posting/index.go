@@ -26,7 +26,7 @@ import (
 
 	"github.com/dgraph-io/dgraph/group"
 	"github.com/dgraph-io/dgraph/protos/taskp"
-	"github.com/dgraph-io/dgraph/protos/typesp"
+	//	"github.com/dgraph-io/dgraph/protos/typesp"
 	"github.com/dgraph-io/dgraph/schema"
 	"github.com/dgraph-io/dgraph/types"
 	"github.com/dgraph-io/dgraph/x"
@@ -205,150 +205,150 @@ func (l *List) AddMutationWithIndex(ctx context.Context, t *taskp.DirectedEdge) 
 
 func DeleteReverseEdges(ctx context.Context, attr string) error {
 	// Delete index entries from data store.
-	pk := x.ParsedKey{Attr: attr}
-	prefix := pk.ReversePrefix()
-	idxIt := pstore.NewIterator()
-	defer idxIt.Close()
+	//	pk := x.ParsedKey{Attr: attr}
+	//	prefix := pk.ReversePrefix()
+	//	idxIt := pstore.NewIterator()
+	//	defer idxIt.Close()
 
-	wb := pstore.NewWriteBatch()
-	defer wb.Destroy()
-	var batchSize int
-	for idxIt.Seek(prefix); idxIt.ValidForPrefix(prefix); idxIt.Next() {
-		key := idxIt.Key().Data()
-		batchSize += len(key)
-		wb.Delete(key)
+	//	wb := pstore.NewWriteBatch()
+	//	defer wb.Destroy()
+	//	var batchSize int
+	//	for idxIt.Seek(prefix); idxIt.ValidForPrefix(prefix); idxIt.Next() {
+	//		key := idxIt.Key().Data()
+	//		batchSize += len(key)
+	//		wb.Delete(key)
 
-		if batchSize >= maxBatchSize {
-			if err := pstore.WriteBatch(wb); err != nil {
-				return err
-			}
-			wb.Clear()
-			batchSize = 0
-		}
-	}
-	if wb.Count() > 0 {
-		if err := pstore.WriteBatch(wb); err != nil {
-			return err
-		}
-		wb.Clear()
-	}
+	//		if batchSize >= maxBatchSize {
+	//			if err := pstore.WriteBatch(wb); err != nil {
+	//				return err
+	//			}
+	//			wb.Clear()
+	//			batchSize = 0
+	//		}
+	//	}
+	//	if wb.Count() > 0 {
+	//		if err := pstore.WriteBatch(wb); err != nil {
+	//			return err
+	//		}
+	//		wb.Clear()
+	//	}
 	return nil
 }
 
 // RebuildIndex rebuilds index for a given attribute.
 func RebuildReverseEdges(ctx context.Context, attr string) error {
-	x.AssertTruef(schema.State().IsReversed(attr), "Attr %s doesn't have reverse", attr)
-	if err := DeleteReverseEdges(ctx, attr); err != nil {
-		return err
-	}
+	//	x.AssertTruef(schema.State().IsReversed(attr), "Attr %s doesn't have reverse", attr)
+	//	if err := DeleteReverseEdges(ctx, attr); err != nil {
+	//		return err
+	//	}
 
-	// Add index entries to data store.
-	pk := x.ParsedKey{Attr: attr}
-	edge := taskp.DirectedEdge{Attr: attr}
-	prefix := pk.DataPrefix()
-	it := pstore.NewIterator()
-	defer it.Close()
+	//	// Add index entries to data store.
+	//	pk := x.ParsedKey{Attr: attr}
+	//	edge := taskp.DirectedEdge{Attr: attr}
+	//	prefix := pk.DataPrefix()
+	//	it := pstore.NewIterator()
+	//	defer it.Close()
 
-	EvictGroup(group.BelongsTo(attr))
-	// Helper function - Add reverse entries for values in posting list
-	addReversePostings := func(pl *typesp.PostingList) {
-		postingsLen := len(pl.Postings)
-		for idx := 0; idx < postingsLen; idx++ {
-			p := pl.Postings[idx]
-			// Add reverse entries based on p.
-			edge.ValueId = p.Uid
-			edge.Op = taskp.DirectedEdge_SET
-			edge.Facets = p.Facets
-			edge.Label = p.Label
-			addReverseMutation(ctx, &edge)
-		}
-	}
+	//	EvictGroup(group.BelongsTo(attr))
+	//	// Helper function - Add reverse entries for values in posting list
+	//	addReversePostings := func(pl *typesp.PostingList) {
+	//		postingsLen := len(pl.Postings)
+	//		for idx := 0; idx < postingsLen; idx++ {
+	//			p := pl.Postings[idx]
+	//			// Add reverse entries based on p.
+	//			edge.ValueId = p.Uid
+	//			edge.Op = taskp.DirectedEdge_SET
+	//			edge.Facets = p.Facets
+	//			edge.Label = p.Label
+	//			addReverseMutation(ctx, &edge)
+	//		}
+	//	}
 
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		pki := x.Parse(it.Key().Data())
-		edge.Entity = pki.Uid
-		var pl typesp.PostingList
-		x.Check(pl.Unmarshal(it.Value().Data()))
+	//	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+	//		pki := x.Parse(it.Key().Data())
+	//		edge.Entity = pki.Uid
+	//		var pl typesp.PostingList
+	//		x.Check(pl.Unmarshal(it.Value().Data()))
 
-		// Posting list contains only values or only UIDs.
-		if len(pl.Postings) != 0 && postingType(pl.Postings[0]) == x.ValueUid {
-			addReversePostings(&pl)
-		}
-	}
+	//		// Posting list contains only values or only UIDs.
+	//		if len(pl.Postings) != 0 && postingType(pl.Postings[0]) == x.ValueUid {
+	//			addReversePostings(&pl)
+	//		}
+	//	}
 	return nil
 }
 
 func DeleteIndex(ctx context.Context, attr string) error {
 	// Delete index entries from data store.
-	pk := x.ParsedKey{Attr: attr}
-	prefix := pk.IndexPrefix()
-	idxIt := pstore.NewIterator()
-	defer idxIt.Close()
+	//	pk := x.ParsedKey{Attr: attr}
+	//	prefix := pk.IndexPrefix()
+	//	idxIt := pstore.NewIterator()
+	//	defer idxIt.Close()
 
-	wb := pstore.NewWriteBatch()
-	defer wb.Destroy()
-	var batchSize int
-	for idxIt.Seek(prefix); idxIt.ValidForPrefix(prefix); idxIt.Next() {
-		key := idxIt.Key().Data()
-		batchSize += len(key)
-		wb.Delete(key)
+	//	wb := pstore.NewWriteBatch()
+	//	defer wb.Destroy()
+	//	var batchSize int
+	//	for idxIt.Seek(prefix); idxIt.ValidForPrefix(prefix); idxIt.Next() {
+	//		key := idxIt.Key().Data()
+	//		batchSize += len(key)
+	//		wb.Delete(key)
 
-		if batchSize >= maxBatchSize {
-			if err := pstore.WriteBatch(wb); err != nil {
-				return err
-			}
-			wb.Clear()
-			batchSize = 0
-		}
-	}
-	if wb.Count() > 0 {
-		if err := pstore.WriteBatch(wb); err != nil {
-			return err
-		}
-		wb.Clear()
-	}
+	//		if batchSize >= maxBatchSize {
+	//			if err := pstore.WriteBatch(wb); err != nil {
+	//				return err
+	//			}
+	//			wb.Clear()
+	//			batchSize = 0
+	//		}
+	//	}
+	//	if wb.Count() > 0 {
+	//		if err := pstore.WriteBatch(wb); err != nil {
+	//			return err
+	//		}
+	//		wb.Clear()
+	//	}
 	return nil
 }
 
 // RebuildIndex rebuilds index for a given attribute.
 func RebuildIndex(ctx context.Context, attr string) error {
-	x.AssertTruef(schema.State().IsIndexed(attr), "Attr %s not indexed", attr)
-	if err := DeleteIndex(ctx, attr); err != nil {
-		return err
-	}
+	//	x.AssertTruef(schema.State().IsIndexed(attr), "Attr %s not indexed", attr)
+	//	if err := DeleteIndex(ctx, attr); err != nil {
+	//		return err
+	//	}
 
-	// Add index entries to data store.
-	pk := x.ParsedKey{Attr: attr}
-	edge := taskp.DirectedEdge{Attr: attr}
-	prefix := pk.DataPrefix()
-	it := pstore.NewIterator()
-	defer it.Close()
+	//	// Add index entries to data store.
+	//	pk := x.ParsedKey{Attr: attr}
+	//	edge := taskp.DirectedEdge{Attr: attr}
+	//	prefix := pk.DataPrefix()
+	//	it := pstore.NewIterator()
+	//	defer it.Close()
 
-	EvictGroup(group.BelongsTo(attr))
-	// Helper function - Add index entries for values in posting list
-	addPostingsToIndex := func(pl *typesp.PostingList) {
-		postingsLen := len(pl.Postings)
-		for idx := 0; idx < postingsLen; idx++ {
-			p := pl.Postings[idx]
-			// Add index entries based on p.
-			val := types.Val{
-				Value: p.Value,
-				Tid:   types.TypeID(p.ValType),
-			}
-			addIndexMutations(ctx, &edge, val, taskp.DirectedEdge_SET)
-		}
-	}
+	//	EvictGroup(group.BelongsTo(attr))
+	//	// Helper function - Add index entries for values in posting list
+	//	addPostingsToIndex := func(pl *typesp.PostingList) {
+	//		postingsLen := len(pl.Postings)
+	//		for idx := 0; idx < postingsLen; idx++ {
+	//			p := pl.Postings[idx]
+	//			// Add index entries based on p.
+	//			val := types.Val{
+	//				Value: p.Value,
+	//				Tid:   types.TypeID(p.ValType),
+	//			}
+	//			addIndexMutations(ctx, &edge, val, taskp.DirectedEdge_SET)
+	//		}
+	//	}
 
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		pki := x.Parse(it.Key().Data())
-		edge.Entity = pki.Uid
-		var pl typesp.PostingList
-		x.Check(pl.Unmarshal(it.Value().Data()))
+	//	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+	//		pki := x.Parse(it.Key().Data())
+	//		edge.Entity = pki.Uid
+	//		var pl typesp.PostingList
+	//		x.Check(pl.Unmarshal(it.Value().Data()))
 
-		// Posting list contains only values or only UIDs.
-		if len(pl.Postings) != 0 && postingType(pl.Postings[0]) != x.ValueUid {
-			addPostingsToIndex(&pl)
-		}
-	}
+	//		// Posting list contains only values or only UIDs.
+	//		if len(pl.Postings) != 0 && postingType(pl.Postings[0]) != x.ValueUid {
+	//			addPostingsToIndex(&pl)
+	//		}
+	//	}
 	return nil
 }

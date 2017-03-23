@@ -8,7 +8,7 @@ import (
 	"github.com/dgraph-io/dgraph/protos/taskp"
 	"github.com/dgraph-io/dgraph/protos/workerp"
 	"github.com/dgraph-io/dgraph/schema"
-	"github.com/dgraph-io/dgraph/tok"
+	//	"github.com/dgraph-io/dgraph/tok"
 	"github.com/dgraph-io/dgraph/types"
 	"github.com/dgraph-io/dgraph/x"
 )
@@ -98,89 +98,90 @@ var (
 // enough for our pagination params. When all the UID lists are done, we stop
 // iterating over the index.
 func processSort(ts *taskp.Sort) (*taskp.SortResult, error) {
-	attr := ts.Attr
-	x.AssertTruef(ts.Count > 0,
-		("We do not yet support negative or infinite count with sorting: %s %d. " +
-			"Try flipping order and return first few elements instead."),
-		attr, ts.Count)
+	//	attr := ts.Attr
+	//	x.AssertTruef(ts.Count > 0,
+	//		("We do not yet support negative or infinite count with sorting: %s %d. " +
+	//			"Try flipping order and return first few elements instead."),
+	//		attr, ts.Count)
 
-	n := len(ts.UidMatrix)
-	out := make([]intersectedList, n)
-	for i := 0; i < n; i++ {
-		// offsets[i] is the offset for i-th posting list. It gets decremented as we
-		// iterate over buckets.
-		out[i].offset = int(ts.Offset)
-		var emptyList taskp.List
-		out[i].ulist = &emptyList
-		out[i].excludeSet = make(map[uint64]struct{})
-	}
+	//	n := len(ts.UidMatrix)
+	//	out := make([]intersectedList, n)
+	//	for i := 0; i < n; i++ {
+	//		// offsets[i] is the offset for i-th posting list. It gets decremented as we
+	//		// iterate over buckets.
+	//		out[i].offset = int(ts.Offset)
+	//		var emptyList taskp.List
+	//		out[i].ulist = &emptyList
+	//		out[i].excludeSet = make(map[uint64]struct{})
+	//	}
 
-	// Iterate over every bucket / token.
-	it := pstore.NewIterator()
-	defer it.Close()
+	//	// Iterate over every bucket / token.
+	//	it := pstore.NewIterator()
+	//	defer it.Close()
 
-	// Get the tokenizers and choose the corresponding one.
-	if !schema.State().IsIndexed(attr) {
-		return nil, x.Errorf("Attribute %s is not indexed.", attr)
-	}
+	//	// Get the tokenizers and choose the corresponding one.
+	//	if !schema.State().IsIndexed(attr) {
+	//		return nil, x.Errorf("Attribute %s is not indexed.", attr)
+	//	}
 
-	tokenizers := schema.State().Tokenizer(attr)
-	var tok tok.Tokenizer
-	for _, t := range tokenizers {
-		// Get the first sortable index.
-		if t.IsSortable() {
-			tok = t
-			break
-		}
-	}
-	if tok == nil {
-		return nil, x.Errorf("Attribute:%s does not have proper index",
-			attr)
-	}
+	//	tokenizers := schema.State().Tokenizer(attr)
+	//	var tok tok.Tokenizer
+	//	for _, t := range tokenizers {
+	//		// Get the first sortable index.
+	//		if t.IsSortable() {
+	//			tok = t
+	//			break
+	//		}
+	//	}
+	//	if tok == nil {
+	//		return nil, x.Errorf("Attribute:%s does not have proper index",
+	//			attr)
+	//	}
 
-	indexPrefix := x.IndexKey(attr, string(tok.Identifier()))
-	if !ts.Desc {
-		// We need to seek to the first key of this index type.
-		seekKey := indexPrefix
-		it.Seek(seekKey)
-	} else {
-		// We need to reach the last key of this index type.
-		seekKey := x.IndexKey(attr, string(tok.Identifier()+1))
-		it.SeekForPrev(seekKey)
-	}
+	//	indexPrefix := x.IndexKey(attr, string(tok.Identifier()))
+	//	if !ts.Desc {
+	//		// We need to seek to the first key of this index type.
+	//		seekKey := indexPrefix
+	//		it.Seek(seekKey)
+	//	} else {
+	//		// We need to reach the last key of this index type.
+	//		seekKey := x.IndexKey(attr, string(tok.Identifier()+1))
+	//		it.SeekForPrev(seekKey)
+	//	}
 
-BUCKETS:
+	//BUCKETS:
 
-	// Outermost loop is over index buckets.
-	for it.ValidForPrefix(indexPrefix) {
-		k := x.Parse(it.Key().Data())
-		x.AssertTrue(k != nil)
-		x.AssertTrue(k.IsIndex())
-		token := k.Term
+	//	// Outermost loop is over index buckets.
+	//	for it.ValidForPrefix(indexPrefix) {
+	//		k := x.Parse(it.Key().Data())
+	//		x.AssertTrue(k != nil)
+	//		x.AssertTrue(k.IsIndex())
+	//		token := k.Term
 
-		// Intersect every UID list with the index bucket, and update their
-		// results (in out).
-		err := intersectBucket(ts, attr, token, out)
-		switch err {
-		case errDone:
-			break BUCKETS
-		case errContinue:
-			// Continue iterating over tokens / index buckets.
-		default:
-			return &emptySortResult, err
-		}
-		if ts.Desc {
-			it.Prev()
-		} else {
-			it.Next()
-		}
-	}
+	//		// Intersect every UID list with the index bucket, and update their
+	//		// results (in out).
+	//		err := intersectBucket(ts, attr, token, out)
+	//		switch err {
+	//		case errDone:
+	//			break BUCKETS
+	//		case errContinue:
+	//			// Continue iterating over tokens / index buckets.
+	//		default:
+	//			return &emptySortResult, err
+	//		}
+	//		if ts.Desc {
+	//			it.Prev()
+	//		} else {
+	//			it.Next()
+	//		}
+	//	}
 
-	r := new(taskp.SortResult)
-	for _, il := range out {
-		r.UidMatrix = append(r.UidMatrix, il.ulist)
-	}
-	return r, nil
+	//	r := new(taskp.SortResult)
+	//	for _, il := range out {
+	//		r.UidMatrix = append(r.UidMatrix, il.ulist)
+	//	}
+	//	return r, nil
+	return nil, nil
 }
 
 type intersectedList struct {

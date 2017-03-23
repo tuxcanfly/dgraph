@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"path"
+	//	"path"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
+	//	"sync"
+	//	"time"
 
-	"github.com/dgraph-io/dgraph/group"
+	//	"github.com/dgraph-io/dgraph/group"
 	"github.com/dgraph-io/dgraph/protos/typesp"
 	"github.com/dgraph-io/dgraph/protos/workerp"
 	"github.com/dgraph-io/dgraph/types"
@@ -143,145 +143,146 @@ func writeToFile(fpath string, ch chan []byte) error {
 // Backup creates a backup of data by exporting it as an RDF gzip.
 func backup(gid uint32, bdir string) error {
 	// Use a goroutine to write to file.
-	err := os.MkdirAll(bdir, 0700)
-	if err != nil {
-		return err
-	}
-	fpath := path.Join(bdir, fmt.Sprintf("dgraph-%d-%s.rdf.gz", gid,
-		time.Now().Format("2006-01-02-15-04")))
-	fspath := path.Join(bdir, fmt.Sprintf("dgraph-schema-%d-%s.rdf.gz", gid,
-		time.Now().Format("2006-01-02-15-04")))
-	fmt.Printf("Backing up at: %v, schema at %v\n", fpath, fspath)
-	chb := make(chan []byte, 1000)
-	errChan := make(chan error, 2)
-	go func() {
-		errChan <- writeToFile(fpath, chb)
-	}()
-	chsb := make(chan []byte, 1000)
-	go func() {
-		errChan <- writeToFile(fspath, chsb)
-	}()
+	//	err := os.MkdirAll(bdir, 0700)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	fpath := path.Join(bdir, fmt.Sprintf("dgraph-%d-%s.rdf.gz", gid,
+	//		time.Now().Format("2006-01-02-15-04")))
+	//	fspath := path.Join(bdir, fmt.Sprintf("dgraph-schema-%d-%s.rdf.gz", gid,
+	//		time.Now().Format("2006-01-02-15-04")))
+	//	fmt.Printf("Backing up at: %v, schema at %v\n", fpath, fspath)
+	//	chb := make(chan []byte, 1000)
+	//	errChan := make(chan error, 2)
+	//	go func() {
+	//		errChan <- writeToFile(fpath, chb)
+	//	}()
+	//	chsb := make(chan []byte, 1000)
+	//	go func() {
+	//		errChan <- writeToFile(fspath, chsb)
+	//	}()
 
-	// Use a bunch of goroutines to convert to RDF format.
-	chkv := make(chan kv, 1000)
-	var wg sync.WaitGroup
-	wg.Add(numBackupRoutines)
-	for i := 0; i < numBackupRoutines; i++ {
-		go func() {
-			buf := new(bytes.Buffer)
-			buf.Grow(50000)
-			for item := range chkv {
-				toRDF(buf, item)
-				if buf.Len() >= 40000 {
-					tmp := make([]byte, buf.Len())
-					copy(tmp, buf.Bytes())
-					chb <- tmp
-					buf.Reset()
-				}
-			}
-			if buf.Len() > 0 {
-				tmp := make([]byte, buf.Len())
-				copy(tmp, buf.Bytes())
-				chb <- tmp
-			}
-			wg.Done()
-		}()
-	}
+	//	// Use a bunch of goroutines to convert to RDF format.
+	//	chkv := make(chan kv, 1000)
+	//	var wg sync.WaitGroup
+	//	wg.Add(numBackupRoutines)
+	//	for i := 0; i < numBackupRoutines; i++ {
+	//		go func() {
+	//			buf := new(bytes.Buffer)
+	//			buf.Grow(50000)
+	//			for item := range chkv {
+	//				toRDF(buf, item)
+	//				if buf.Len() >= 40000 {
+	//					tmp := make([]byte, buf.Len())
+	//					copy(tmp, buf.Bytes())
+	//					chb <- tmp
+	//					buf.Reset()
+	//				}
+	//			}
+	//			if buf.Len() > 0 {
+	//				tmp := make([]byte, buf.Len())
+	//				copy(tmp, buf.Bytes())
+	//				chb <- tmp
+	//			}
+	//			wg.Done()
+	//		}()
+	//	}
 
-	// Use a goroutine to convert typesp.Schema to string
-	chs := make(chan *skv, 1000)
-	wg.Add(1)
-	go func() {
-		buf := new(bytes.Buffer)
-		buf.Grow(50000)
-		for item := range chs {
-			toSchema(buf, item)
-			if buf.Len() >= 40000 {
-				tmp := make([]byte, buf.Len())
-				copy(tmp, buf.Bytes())
-				chsb <- tmp
-				buf.Reset()
-			}
-		}
-		if buf.Len() > 0 {
-			tmp := make([]byte, buf.Len())
-			copy(tmp, buf.Bytes())
-			chsb <- tmp
-		}
-		wg.Done()
-	}()
+	//	// Use a goroutine to convert typesp.Schema to string
+	//	chs := make(chan *skv, 1000)
+	//	wg.Add(1)
+	//	go func() {
+	//		buf := new(bytes.Buffer)
+	//		buf.Grow(50000)
+	//		for item := range chs {
+	//			toSchema(buf, item)
+	//			if buf.Len() >= 40000 {
+	//				tmp := make([]byte, buf.Len())
+	//				copy(tmp, buf.Bytes())
+	//				chsb <- tmp
+	//				buf.Reset()
+	//			}
+	//		}
+	//		if buf.Len() > 0 {
+	//			tmp := make([]byte, buf.Len())
+	//			copy(tmp, buf.Bytes())
+	//			chsb <- tmp
+	//		}
+	//		wg.Done()
+	//	}()
 
-	// Iterate over rocksdb.
-	it := pstore.NewIterator()
-	defer it.Close()
-	var lastPred string
-	prefix := new(bytes.Buffer)
-	prefix.Grow(100)
-	for it.SeekToFirst(); it.Valid(); {
-		key := it.Key().Data()
-		pk := x.Parse(key)
+	//	// Iterate over rocksdb.
+	//	it := pstore.NewIterator()
+	//	defer it.Close()
+	//	var lastPred string
+	//	prefix := new(bytes.Buffer)
+	//	prefix.Grow(100)
+	//	for it.SeekToFirst(); it.Valid(); {
+	//		key := it.Key().Data()
+	//		pk := x.Parse(key)
 
-		if pk.IsIndex() {
-			// Seek to the end of index keys.
-			it.Seek(pk.SkipRangeOfSameType())
-			continue
-		}
-		if pk.IsReverse() {
-			// Seek to the end of reverse keys.
-			it.Seek(pk.SkipRangeOfSameType())
-			continue
-		}
-		if pk.Attr == "_uid_" {
-			// Skip the UID mappings.
-			it.Seek(pk.SkipPredicate())
-			continue
-		}
-		if pk.IsSchema() {
-			if group.BelongsTo(pk.Attr) == gid {
-				s := &typesp.Schema{}
-				x.Check(s.Unmarshal(it.Value().Data()))
-				chs <- &skv{
-					attr:   pk.Attr,
-					schema: s,
-				}
-			}
-			// skip predicate
-			it.Next()
-			continue
-		}
+	//		if pk.IsIndex() {
+	//			// Seek to the end of index keys.
+	//			it.Seek(pk.SkipRangeOfSameType())
+	//			continue
+	//		}
+	//		if pk.IsReverse() {
+	//			// Seek to the end of reverse keys.
+	//			it.Seek(pk.SkipRangeOfSameType())
+	//			continue
+	//		}
+	//		if pk.Attr == "_uid_" {
+	//			// Skip the UID mappings.
+	//			it.Seek(pk.SkipPredicate())
+	//			continue
+	//		}
+	//		if pk.IsSchema() {
+	//			if group.BelongsTo(pk.Attr) == gid {
+	//				s := &typesp.Schema{}
+	//				x.Check(s.Unmarshal(it.Value().Data()))
+	//				chs <- &skv{
+	//					attr:   pk.Attr,
+	//					schema: s,
+	//				}
+	//			}
+	//			// skip predicate
+	//			it.Next()
+	//			continue
+	//		}
 
-		x.AssertTrue(pk.IsData())
-		pred, uid := pk.Attr, pk.Uid
-		if pred != lastPred && group.BelongsTo(pred) != gid {
-			it.Seek(pk.SkipPredicate())
-			continue
-		}
+	//		x.AssertTrue(pk.IsData())
+	//		pred, uid := pk.Attr, pk.Uid
+	//		if pred != lastPred && group.BelongsTo(pred) != gid {
+	//			it.Seek(pk.SkipPredicate())
+	//			continue
+	//		}
 
-		prefix.WriteString("<0x")
-		prefix.WriteString(strconv.FormatUint(uid, 16))
-		prefix.WriteString("> <")
-		prefix.WriteString(pred)
-		prefix.WriteString("> ")
-		pl := &typesp.PostingList{}
-		x.Check(pl.Unmarshal(it.Value().Data()))
-		chkv <- kv{
-			prefix: prefix.String(),
-			list:   pl,
-		}
-		prefix.Reset()
-		lastPred = pred
-		it.Next()
-	}
+	//		prefix.WriteString("<0x")
+	//		prefix.WriteString(strconv.FormatUint(uid, 16))
+	//		prefix.WriteString("> <")
+	//		prefix.WriteString(pred)
+	//		prefix.WriteString("> ")
+	//		pl := &typesp.PostingList{}
+	//		x.Check(pl.Unmarshal(it.Value().Data()))
+	//		chkv <- kv{
+	//			prefix: prefix.String(),
+	//			list:   pl,
+	//		}
+	//		prefix.Reset()
+	//		lastPred = pred
+	//		it.Next()
+	//	}
 
-	close(chkv) // We have stopped output to chkv.
-	close(chs)  // we have stopped output to chs (schema)
-	wg.Wait()   // Wait for numBackupRoutines to finish.
-	close(chb)  // We have stopped output to chb.
-	close(chsb) // we have stopped output to chs (schema)
+	//	close(chkv) // We have stopped output to chkv.
+	//	close(chs)  // we have stopped output to chs (schema)
+	//	wg.Wait()   // Wait for numBackupRoutines to finish.
+	//	close(chb)  // We have stopped output to chb.
+	//	close(chsb) // we have stopped output to chs (schema)
 
-	err = <-errChan
-	err = <-errChan
-	return err
+	//	err = <-errChan
+	//	err = <-errChan
+	//	return err
+	return nil
 }
 
 func handleBackupForGroup(ctx context.Context, reqId uint64, gid uint32) *workerp.BackupPayload {

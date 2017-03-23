@@ -36,10 +36,12 @@ import (
 	"github.com/dgraph-io/dgraph/protos/facetsp"
 	"github.com/dgraph-io/dgraph/protos/taskp"
 	"github.com/dgraph-io/dgraph/protos/typesp"
-	"github.com/dgraph-io/dgraph/store"
+	//	"github.com/dgraph-io/dgraph/store"
 	"github.com/dgraph-io/dgraph/types"
 	"github.com/dgraph-io/dgraph/types/facets"
 	"github.com/dgraph-io/dgraph/x"
+
+	"github.com/dgraph-io/badger/db"
 )
 
 var (
@@ -62,12 +64,14 @@ const (
 
 type List struct {
 	x.SafeMutex
-	index       x.SafeMutex
-	key         []byte
-	ghash       uint64
-	pbuffer     unsafe.Pointer
-	mlayer      []*typesp.Posting // mutations
-	pstore      *store.Store      // postinglist store
+	index   x.SafeMutex
+	key     []byte
+	ghash   uint64
+	pbuffer unsafe.Pointer
+	mlayer  []*typesp.Posting // mutations
+	//	pstore      *store.Store      // postinglist store
+	pstore *db.DB
+
 	lastCompact time.Time
 	deleteMe    int32 // Using atomic for this, to avoid expensive SetForDeletion operation.
 	refcount    int32
@@ -93,7 +97,8 @@ var listPool = sync.Pool{
 	},
 }
 
-func getNew(key []byte, pstore *store.Store) *List {
+//func getNew(key []byte, pstore *store.Store) *List {
+func getNew(key []byte, pstore *db.DB) *List {
 	l := listPool.Get().(*List)
 	*l = List{}
 	l.key = key
@@ -211,9 +216,11 @@ func (l *List) getPostingList(loop int) *typesp.PostingList {
 		x.AssertTrue(l.pstore != nil)
 		plist = new(typesp.PostingList)
 
-		if slice, err := l.pstore.Get(l.key); err == nil && slice != nil {
-			x.Checkf(plist.Unmarshal(slice.Data()), "Unable to Unmarshal PostingList from store")
-			slice.Free()
+		//		if slice, err := l.pstore.Get(l.key); err == nil && slice != nil {
+		if slice := l.pstore.Get(l.key); slice != nil {
+			//			x.Checkf(plist.Unmarshal(slice.Data()), "Unable to Unmarshal PostingList from store")
+			//			slice.Free()
+			x.Checkf(plist.Unmarshal(slice), "Unable to Unmarshal PostingList from store")
 		}
 		if atomic.CompareAndSwapPointer(&l.pbuffer, pb, unsafe.Pointer(plist)) {
 			return plist

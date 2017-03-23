@@ -27,11 +27,13 @@ import (
 	"time"
 
 	"github.com/dgraph-io/dgraph/protos/workerp"
-	"github.com/dgraph-io/dgraph/store"
+	//	"github.com/dgraph-io/dgraph/store"
 	"github.com/dgraph-io/dgraph/x"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+
+	"github.com/dgraph-io/badger/db"
 )
 
 var (
@@ -39,11 +41,13 @@ var (
 		"Port used by worker for internal communication.")
 	backupPath = flag.String("backup", "backup",
 		"Folder in which to store backups.")
-	pstore       *store.Store
+	//	pstore       *store.Store
+	pstore       *db.DB
 	workerServer *grpc.Server
 )
 
-func Init(ps *store.Store) {
+//func Init(ps *store.Store) {
+func Init(ps *db.DB) {
 	pstore = ps
 }
 
@@ -95,7 +99,8 @@ func RunServer(bindall bool) {
 
 // StoreStats returns stats for data store.
 func StoreStats() string {
-	return pstore.GetStats()
+	//	return pstore.GetStats()
+	return ""
 }
 
 // BlockingStop stops all the nodes, server between other workers and syncs all marks.
