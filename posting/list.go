@@ -220,7 +220,7 @@ func (l *List) getPostingList(loop int) *typesp.PostingList {
 		if slice := l.pstore.Get(l.key); slice != nil {
 			//			x.Checkf(plist.Unmarshal(slice.Data()), "Unable to Unmarshal PostingList from store")
 			//			slice.Free()
-			x.Checkf(plist.Unmarshal(slice), "Unable to Unmarshal PostingList from store")
+			x.Checkf(plist.Unmarshal(slice), "Unable to Unmarshal PostingList from store: %d %d %v %v", len(l.key), len(slice), l.key, slice)
 		}
 		if atomic.CompareAndSwapPointer(&l.pbuffer, pb, unsafe.Pointer(plist)) {
 			return plist
