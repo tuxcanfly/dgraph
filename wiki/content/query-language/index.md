@@ -2376,6 +2376,289 @@ curl localhost:8080/query -XPOST -d $'{
 
 This query would again retrieve the shortest path but using some different parameters for the edge weights which are specified using facets (weight and liking). Also, we'd not like to have any person whose name contains `alice` in the path which is specified by the filter.
 
+## Recruse Query
+
+`Recurse` query let you traverse a set of predicates (with filter, facets, etc.) until we reach all leaf nodes or we reach the maximum depth which is specified by the `depth` parameter.
+
+To get 10 movies from a genre that has more than 30000 films and then get two actors for those movies we'd do something as follows: 
+```
+curl localhost:8080/query -XPOST -d $'{
+ recurse(func: gt(count(~genre), 30000), first: 1){
+  name@en
+  ~genre (first:10) @filter(gt(count(starring), 2))
+  starring (first: 2)
+  performance.actor
+	}
+}'
+```
+Output:
+```
+{
+  "recurse": [
+    {
+      "name": "Short Film",
+      "~genre": [
+        {
+          "name": "Life Begins for Andy Panda",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Bernice Hansen"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Mel Blanc"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Liviu's Dream",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Catalina Harabagiu"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Adrian Vancică"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Payload",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Roshan Johal"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Dylan Russell"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Green Eyes",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Ignas Miskinis"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Ieva Matulionytė"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Dogonauts: Enemy Line",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Don Chatfield"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Justin Rasch"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Morning Prayers",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Ismir Gagula"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Serafedin Redzepov"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "A Letter to Uncle Boonmee",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Nuttapon  Kemthong"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Kumgieng Jittamaat"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Lot in Sodom",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Dorthea House"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Hildegarde Watson"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Rush Hour",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Christelle Seyvecon"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Nicolas Guillot"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sound Collector",
+          "starring": [
+            {
+              "performance.actor": [
+                {
+                  "name": "Steve Alexander"
+                }
+              ]
+            },
+            {
+              "performance.actor": [
+                {
+                  "name": "Joann McIntyre"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+Some points to keep in mind while using recurse queries are:
+- Each edge would be traversed only once. Hence, cycles would be avoided.
+- You can specify only one level of predicates after root. These would be traversed recursively. Both scalar and entity-nodes are treated similarly.
+- Be careful as the result size could explode quickly and an error would be returned if the result set gets too large. In such cases use more filter, limit resutls using pagination, or provide a depth parameter at root as follows:
+```
+curl localhost:8080/query -XPOST -d $'{
+ recurse(func: gt(count(~genre), 30000), depth: 2){
+  name@en
+  ~genre (first:2) @filter(gt(count(starring), 2))
+  starring (first: 2)
+  performance.actor
+  }
+}'
+```
+Output: 
+```
+{
+  "recurse": [
+    {
+      "name": "Short Film",
+      "~genre": [
+        {
+          "name": "Life Begins for Andy Panda"
+        },
+        {
+          "name": "Liviu's Dream"
+        }
+      ]
+    },
+    {
+      "name": "Drama",
+      "~genre": [
+        {
+          "name": "Prisoners"
+        },
+        {
+          "name": "Stoker"
+        }
+      ]
+    },
+    {
+      "name": "Comedy",
+      "~genre": [
+        {
+          "name": "A tu per tu"
+        },
+        {
+          "name": "Gastone"
+        }
+      ]
+    },
+    {
+      "name": "Documentary film",
+      "~genre": [
+        {
+          "name": "Dream Theater: Chaos in Motion"
+        },
+        {
+          "name": "Filming Othello"
+        }
+      ]
+    }
+  ]
+}
+```
+
 ## Normalize directive
 
 Queries can have a `@normalize` directive, which if supplied at the root, the response would only contain the predicates which are asked with an alias in the query. The response is also flatter and avoids nesting, hence would be easier to parse in some cases.
