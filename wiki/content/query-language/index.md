@@ -2001,8 +2001,8 @@ curl localhost:8080/query -XPOST -d $'{
    }
   }
 
- films(var:B) {
-   ~genre @filter(id(A)) {
+ films(id: var(B)) {
+   ~genre @filter(var(A)) {
      name@en
    }
  }
@@ -2093,9 +2093,9 @@ curl localhost:8080/query -XPOST -d $'{
    }
   }
 
- films(var:D) @filter(id(B)) {   # movies done by both Angelina and Brad
+ films(id: var(D)) @filter(var(B)) {   # movies done by both Angelina and Brad
   name@en
-   ~genre @filter(id(A) OR id(C)) {  # Genres of movies done by Angelina or Brad
+   ~genre @filter(var(A) OR var(C)) {  # Genres of movies done by Angelina or Brad
      name@en
    }
  }
