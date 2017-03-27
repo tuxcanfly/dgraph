@@ -2326,7 +2326,7 @@ This query shows a mix of how things can be used.
 
 ### Aggregating value variables
 
-Currently we allow adding value variabels and assigning it to a new variable. This can be very useful if you want a simple recommendation sysntem based on a formula. For example:
+Currently we allow adding value variabels and assigning it to a new variable. This can be very useful if you want a simple recommendation system based on a formula. For example:
 
 ```
 curl localhost:8080/query -XPOST -d $'{
