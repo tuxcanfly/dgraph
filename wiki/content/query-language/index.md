@@ -1825,7 +1825,7 @@ For `charlie` who does not have `car` edge and no facets other than that of frie
 We are working on supporting filtering, sorting and pagination based on facets in the query.
 
 ## Aggregation
-Aggregation is process in which information is gathered and expressed in a summary form. A common aggregation purpose is to get more information about particular groups based on specific variables such as age, profession, or income.
+Aggregation functions that are supported are `min, max, sum, avg`. While min and max operate on all scalar-values, sum and avg can operate only on `int and float` types. Aggregation does not depend on the index. All the aggregation results are attached one level above in the result.
 
 {{% notice "note" %}}We support aggregation on scalar type only.{{% /notice %}}
 
@@ -1839,7 +1839,6 @@ curl localhost:8080/query -XPOST -d $'{
   }
 }' | python -m json.tool | less
 ```
-
 Output:
 
 ```
@@ -1883,7 +1882,7 @@ Output:
 }
 ```
 
-### Sum
+### Sum, Avg
 ```
 curl localhost:8080/query -XPOST -d $'
 mutation {
@@ -1908,6 +1907,7 @@ query {
 			name
 			age
 			sum(age)
+			avg(age)			
 		}
 	}
 }' | python -m json.tool | less
@@ -1917,27 +1917,30 @@ Output:
 
 ```
 {
-  "me": [
-    {
-      "friend": [
+    "me": [
         {
-          "sum(age)": 300
-        },
-        {
-          "age": 99,
-          "name": "Tom"
-        },
-        {
-          "age": 100,
-          "name": "Jerry"
-        },
-        {
-          "age": 101,
-          "name": "Teddy"
+            "friend": [
+                {
+                    "age": 99,
+                    "name": "Tom"
+                },
+                {
+                    "age": 100,
+                    "name": "Jerry"
+                },
+                {
+                    "age": 101,
+                    "name": "Teddy"
+                },
+                {
+                    "sum(age)": 300
+                },
+                {
+                    "avg(age)": 100.0
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
 ```
 
@@ -2378,16 +2381,16 @@ This query would again retrieve the shortest path but using some different param
 
 ## Recruse Query
 
-`Recurse` query let you traverse a set of predicates (with filter, facets, etc.) until we reach all leaf nodes or we reach the maximum depth which is specified by the `depth` parameter.
+`Recurse` queries let you traverse a set of predicates (with filter, facets, etc.) until we reach all leaf nodes or we reach the maximum depth which is specified by the `depth` parameter.
 
 To get 10 movies from a genre that has more than 30000 films and then get two actors for those movies we'd do something as follows: 
 ```
 curl localhost:8080/query -XPOST -d $'{
- recurse(func: gt(count(~genre), 30000), first: 1){
-  name@en
-  ~genre (first:10) @filter(gt(count(starring), 2))
-  starring (first: 2)
-  performance.actor
+	recurse(func: gt(count(~genre), 30000), first: 1){
+		name@en
+		~genre (first:10) @filter(gt(count(starring), 2))
+		starring (first: 2)
+		performance.actor
 	}
 }'
 ```
@@ -2596,15 +2599,16 @@ Output:
 Some points to keep in mind while using recurse queries are:
 - Each edge would be traversed only once. Hence, cycles would be avoided.
 - You can specify only one level of predicates after root. These would be traversed recursively. Both scalar and entity-nodes are treated similarly.
+- Only one recurse block is advised per query.
 - Be careful as the result size could explode quickly and an error would be returned if the result set gets too large. In such cases use more filter, limit resutls using pagination, or provide a depth parameter at root as follows:
 ```
 curl localhost:8080/query -XPOST -d $'{
- recurse(func: gt(count(~genre), 30000), depth: 2){
-  name@en
-  ~genre (first:2) @filter(gt(count(starring), 2))
-  starring (first: 2)
-  performance.actor
-  }
+	recurse(func: gt(count(~genre), 30000), depth: 2){
+		name@en
+		~genre (first:2) @filter(gt(count(starring), 2))
+		starring (first: 2)
+		performance.actor
+	}
 }'
 ```
 Output: 
