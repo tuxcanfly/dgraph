@@ -2242,26 +2242,26 @@ Value variables are those which store the scalar values (unlike the UID lists wh
 
 ```
 curl localhost:8080/query -XPOST -d $'{
- var(func:allofterms(name, "angelina jolie")) {
-  name@en
-  actor.film {
-  performance.film {
-     	B AS genre {
-        A as name@en
-      }
-    }
-   }
-  }
+	var(func:allofterms(name, "angelina jolie")) {
+ 		name@en
+		actor.film {
+			performance.film {
+				B AS genre {
+					A as name@en
+				}
+			}
+		}
+	}
 
- genre(id: var(B), orderasc: var(A)) @filter(gt(count(~genre), 30000)){
-  var(A)
-  ~genre {
-    	min(name)
-    	max(name)
-    	min(initial_release_date)
-    	max(initial_release_date)
-  	}
- 	}
+	genre(id: var(B), orderasc: var(A)) @filter(gt(count(~genre), 30000)){
+		var(A)
+		~genre {
+			min(name)
+			max(name)
+			min(initial_release_date)
+			max(initial_release_date)
+		}
+	}
 }' | jq
 ```
 Output:
