@@ -2236,6 +2236,146 @@ curl localhost:8080/query -XPOST -d $'{
 
 ```
 
+## Value Variables
+
+Value variables are those which store the scalar values (unlike the UID lists which we saw above). These are a map from the UID to the corresponding value. They can store scalar predicates, aggregate functions, can be used for sorting resutls and retrieving. For example:
+
+```
+curl localhost:8080/query -XPOST -d $'{
+ var(func:allofterms(name, "angelina jolie")) {
+  name@en
+  actor.film {
+  performance.film {
+     	B AS genre {
+        A as name@en
+      }
+    }
+   }
+  }
+
+ genre(id: var(B), orderasc: var(A)) @filter(gt(count(~genre), 30000)){
+  var(A)
+  ~genre {
+    	min(name)
+    	max(name)
+    	min(initial_release_date)
+    	max(initial_release_date)
+  	}
+ 	}
+}' | jq
+```
+Output:
+```
+{
+  "genre": [
+    {
+      "var[A]": "Comedy",
+      "~genre": [
+        {
+          "min(name)": "#1 Cheerleader Camp"
+        },
+        {
+          "max(name)": "후라이보이 박사소동"
+        },
+        {
+          "min(initial_release_date)": "0214-02-28"
+        },
+        {
+          "max(initial_release_date)": "2103-01-01"
+        }
+      ]
+    },
+    {
+      "var[A]": "Drama",
+      "~genre": [
+        {
+          "min(name)": "#Stuck"
+        },
+        {
+          "max(name)": "李朝 春花圖"
+        },
+        {
+          "min(initial_release_date)": "0214-02-28"
+        },
+        {
+          "max(initial_release_date)": "2017-12-01"
+        }
+      ]
+    },
+    {
+      "var[A]": "Short Film",
+      "~genre": [
+        {
+          "min(name)": "#11, MareyMoiré"
+        },
+        {
+          "max(name)": "휴가"
+        },
+        {
+          "min(initial_release_date)": "0214-02-28"
+        },
+        {
+          "max(initial_release_date)": "2103-05-22"
+        }
+      ]
+    }
+  ]
+}
+```
+This query shows a mix of how things can be used.
+
+### Aggregating value variables
+
+Currently we allow adding value variabels and assigning it to a new variable. This can be very useful if you want a simple recommendation sysntem based on a formula. For example:
+
+```
+curl localhost:8080/query -XPOST -d $'{
+	var(func:allofterms(name, "steven spielberg")) {
+		name@en
+		films as director.film {
+			p as count(starring)
+			q as count(genre)
+			r as count(country)
+			score as sumvar(p, q, r)
+		}
+	}
+
+	TopMovies(id: var(films), orderdesc: var(score), first: 5){
+		name@en
+		var(score)
+	}
+}' | jq
+```
+Output:
+```
+{
+  "TopMovies": [
+    {
+      "name": "Lincoln",
+      "var[score]": 179
+    },
+    {
+      "name": "Minority Report",
+      "var[score]": 156
+    },
+    {
+      "name": "Schindler's List",
+      "var[score]": 145
+    },
+    {
+      "name": "The Terminal",
+      "var[score]": 118
+    },
+    {
+      "name": "Saving Private Ryan",
+      "var[score]": 99
+    }
+  ]
+}
+```
+In the above query we retrieve the top movies (by sum of number of actors, genres, countries) of the entity named steven spielberg.
+
+
 ## Shortest Path Queries
 
 Shortest path between a `src` node and `dst` node can be found using the keyword `shortest` for the query block name. It requires the source node id, destination node id and the predicates (atleast one) that have to be considered for traversing. This query block by itself will not return any results back but the path has to be stored in a variable and used in other query blocks as required.
