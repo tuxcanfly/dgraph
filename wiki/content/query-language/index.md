@@ -1127,7 +1127,7 @@ the predicate (on which the index is based), geo-location point and a distance (
 
 ```
 curl localhost:8080/query -XPOST -d $'{
-  tourist( near(loc, [-122.469829, 37.771935], 1000) ) {
+  tourist(func: near(loc, [-122.469829, 37.771935], 1000) ) {
     name
   }
 }' | python -m json.tool | less
@@ -1173,7 +1173,7 @@ This query returns all the entities located within 1000 metres from the [specifi
 
 ```
 curl localhost:8080/query -XPOST -d $'{
-  tourist(within(loc, [[-122.47266769409178, 37.769018558337926 ], [ -122.47266769409178, 37.773699921075135 ], [ -122.4651575088501, 37.773699921075135 ], [ -122.4651575088501, 37.769018558337926 ], [ -122.47266769409178, 37.769018558337926]] )) {
+  tourist(func: within(loc, [[-122.47266769409178, 37.769018558337926 ], [ -122.47266769409178, 37.773699921075135 ], [ -122.4651575088501, 37.773699921075135 ], [ -122.4651575088501, 37.769018558337926 ], [ -122.47266769409178, 37.769018558337926]] )) {
     name
   }
 }' | python -m json.tool | less
@@ -1220,7 +1220,7 @@ This query returns all the entities (points/polygons) located completely within 
 
 ```
 curl localhost:8080/query -XPOST -d $'{
-  tourist(contains(loc, [ -122.50326097011566, 37.73353615592843 ] )) {
+  tourist(func: contains(loc, [ -122.50326097011566, 37.73353615592843 ] )) {
     name
   }
 }
@@ -1245,7 +1245,7 @@ This query returns all the entities that completely enclose the [http://bl.ocks.
 
 ```
 curl localhost:8080/query -XPOST -d $'{
-  tourist(intersects(loc, [[-122.503325343132, 37.73345766902749 ], [ -122.503325343132, 37.733903134117966 ], [ -122.50271648168564, 37.733903134117966 ], [ -122.50271648168564, 37.73345766902749 ], [ -122.503325343132, 37.73345766902749]] )) {
+  tourist(func: intersects(loc, [[-122.503325343132, 37.73345766902749 ], [ -122.503325343132, 37.733903134117966 ], [ -122.50271648168564, 37.733903134117966 ], [ -122.50271648168564, 37.73345766902749 ], [ -122.503325343132, 37.73345766902749]] )) {
     name
   }
 }
