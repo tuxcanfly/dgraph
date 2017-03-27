@@ -348,7 +348,7 @@ timeafterbirth:  dateTime @index
 All the scalar types except uid type can be indexed in dgraph. In the above example, we use the default tokenizer for each data type. You can specify a different tokenizer by writing `@index(tokenizerName)`. For example, for a string, you currently have a choice between two tokenizers `term` which is the default and `exact`. The `exact` tokenizer is useful when you want to do exact matching. Here is an example schema that explicitly specify all the tokenizers being used.
 
 ```
-name: string @index(exact)
+name: string @index(exact, term)
 age: int @index(int)
 address: string @index(term)
 dateofbirth: date @index(date)
@@ -357,9 +357,16 @@ location: geo @index(geo)
 timeafterbirth:  dateTime @index(datetime)
 ```
 
-The available tokenizers are currently `term, exact, int, float, geo, date, datetime`. All of them except `exact` are the default tokenizers for their respective data types.
+The available tokenizers are currently `term, exact, int, float, geo, date, datetime`. All of them except `exact` are the default tokenizers for their respective data types. You can specify multiple indexes per predicate as shown for `name` in the above example.
 
 {{% notice "note" %}}To be able to do sorting and filtering on a predicate, you must index it.{{% /notice %}}
+
+#### Sortable Indices
+
+Not all the indices establish a total order among the values that they index. So, in order to order based on the values or do inequality operations, the corresponding predicates must have a sortable index. The non-sortable indices that are curently present are `term`. All other indices are sortable. For example to sort by names or do any inequality operations on it, this line **must** be specified in schema.
+```
+name: string @index(exact)
+```
 
 ### Reverse Edges
 Each graph edge is unidirectional. It points from one node to another. A lot of times,  you wish to access data in both directions, forward and backward. Instead of having to send edges in both directions, you can use the `@reverse` keyword at the end of a uid (entity) field declaration in the schema. This specifies that the reverse edge should be automatically generated. For example, if we want to add a reverse edge for `directed_by` predicate, we should have a schema as follows.
@@ -1353,6 +1360,59 @@ Output:
   ]
 }
 ```
+
+These compare functions can also be used at root. To obtain one movie per genre which have atleast 30000 movies, we'd do as follows:
+
+```
+curl localhost:8080/query -XPOST -d $'{
+	genre(func: gt(count(~genre), 30000)){
+		name@en
+		~genre (first:1) {
+			name@en
+		}
+	}
+}'
+```
+Output: 
+```
+{
+  "genre": [
+    {
+      "name": "Short Film",
+      "~genre": [
+        {
+          "name": "Eine Rolle Duschen"
+        }
+      ]
+    },
+    {
+      "name": "Drama",
+      "~genre": [
+        {
+          "name": "Prisoners"
+        }
+      ]
+    },
+    {
+      "name": "Comedy",
+      "~genre": [
+        {
+          "name": "A tu per tu"
+        }
+      ]
+    },
+    {
+      "name": "Documentary film",
+      "~genre": [
+        {
+          "name": "Short Cut to Nirvana: Kumbh Mela"
+        }
+      ]
+    }
+  ]
+}
+```
+These functions can help is starting from nodes which have some conditions based on count and might help in determining the type of a node if modelled accordingly. For example, to start with all the directors, we can do `gt(count(director.film), 0)` which means all the nodes that have alteast one outgoing `director.film` edge.
 
 ## Sorting
 
