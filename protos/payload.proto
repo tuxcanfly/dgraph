@@ -1,10 +1,10 @@
-// protoc --gofast_out=plugins=grpc:.  --proto_path=${GOPATH}/src:. protos/workerp/payload.proto
+// protoc --gofast_out=plugins=grpc:.  --proto_path=${GOPATH}/src:. protos/payload.proto
 
 syntax = "proto3";
 
-import "github.com/dgraph-io/dgraph/protos/taskp/task.proto";
+import "github.com/dgraph-io/dgraph/protos/task.proto";
 
-package workerp;
+package protos;
 
 message Payload {
 	bytes Data = 1;
@@ -30,17 +30,17 @@ service Worker {
 	rpc Echo (Payload)             returns (Payload) {}
 
 	// Data serving RPCs.
-	rpc AssignUids (taskp.Num)                 returns (taskp.List) {}
-	rpc Mutate (taskp.Mutations)               returns (Payload) {}
-	rpc ServeTask (taskp.Query)                returns (taskp.Result) {}
-	rpc PredicateAndSchemaData (stream taskp.GroupKeys) returns (stream taskp.KV) {}
-	rpc Sort (taskp.Sort)                      returns (taskp.SortResult) {}
-	rpc RebuildIndex (taskp.RebuildIndex)      returns (Payload) {}
-	rpc Schema (taskp.Schema)                  returns (taskp.SchemaResult) {}
+	rpc AssignUids (protos.Num)                 returns (protos.List) {}
+	rpc Mutate (protos.Mutations)               returns (Payload) {}
+	rpc ServeTask (protos.Query)                returns (protos.Result) {}
+	rpc PredicateAndSchemaData (stream protos.GroupKeys) returns (stream protos.KV) {}
+	rpc Sort (protos.Sort)                      returns (protos.SortResult) {}
+	rpc RebuildIndex (protos.RebuildIndex)      returns (Payload) {}
+	rpc Schema (protos.Schema)                  returns (protos.SchemaResult) {}
 
 	// RAFT serving RPCs.
 	rpc RaftMessage (Payload)                     returns (Payload) {}
-	rpc JoinCluster (taskp.RaftContext)            returns (Payload) {}
-	rpc UpdateMembership (taskp.MembershipUpdate)  returns (taskp.MembershipUpdate) {}
+	rpc JoinCluster (protos.RaftContext)            returns (Payload) {}
+	rpc UpdateMembership (protos.MembershipUpdate)  returns (protos.MembershipUpdate) {}
 	rpc Backup (BackupPayload)                    returns (BackupPayload) {}
 }
