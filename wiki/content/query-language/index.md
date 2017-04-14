@@ -745,13 +745,13 @@ The following [Scalar_Types]({{<relref "#scalar-types">}}) can be used in inequa
 * datetime
 
 #### Less than or equal to
-`leq` is used to filter or obtain UIDs whose value for a predicate is less than or equal to a given value.
+`le` is used to filter or obtain UIDs whose value for a predicate is less than or equal to a given value.
 
 {{< runnable >}}
 {
   me(id: m.06pj8) {
     name@en
-    director.film @filter(leq(initial_release_date, "1970-01-01"))  {
+    director.film @filter(le(initial_release_date, "1970-01-01"))  {
       initial_release_date
       name@en
     }
@@ -779,7 +779,7 @@ This query would return Name and Release date of movies directed by Steven Spiel
 
 #### Less than, greater than, equal to
 
-Above, we have seen the usage of `geq` and `leq`. You can also use `gt` for "strictly greater than" and `lt` for "strictly less than" and `eq` for "equal to".
+Above, we have seen the usage of `geq` and `le`. You can also use `gt` for "strictly greater than" and `lt` for "strictly less than" and `eq` for "equal to".
 
 ### Geolocation
 {{% notice "note" %}}Geolocation functions support only polygons and points as of now. Also, polygons with holes are replaced with the outer loop ignoring any holes.  {{% /notice %}}
@@ -955,7 +955,7 @@ In this query, we are getting film names which contain either both "indiana" and
 
 Dgraph also supports compare filter, which takes form as @filter(compare(count(attribute), N)), only entities fulfill such predication will be returned.
 
-{{% notice "note" %}}"Compare" here includes "eq", "gt", "geq", "lt", "leq".  And "count" should be applied on non-scalar types.{{% /notice %}}
+{{% notice "note" %}}"Compare" here includes "eq", "gt", "geq", "lt", "le".  And "count" should be applied on non-scalar types.{{% /notice %}}
 
 {{< runnable >}}
 {

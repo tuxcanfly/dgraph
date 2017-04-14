@@ -982,7 +982,7 @@ func TestNestedFuncRoot2(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	query := `
 		{
-			me(func: geq(count(friend), 1)) {
+			me(func: ge(count(friend), 1)) {
 				name
 			}
 		}
@@ -1382,7 +1382,7 @@ func TestDebug3(t *testing.T) {
 	// Alright. Now we have everything set up. Let's create the query.
 	query := `
 		{
-			me(id: [1, 24]) @filter(geq(dob, "1910-01-01")) {
+			me(id: [1, 24]) @filter(ge(dob, "1910-01-01")) {
 				name
 			}
 		}
@@ -2118,7 +2118,7 @@ func TestToSubgraphInvalidArgs1(t *testing.T) {
                         me(id:0x01) {
                                 name
                                 gender
-                                friend(disorderasc: dob) @filter(leq(dob, "1909-03-20")) {
+                                friend(disorderasc: dob) @filter(le(dob, "1909-03-20")) {
                                         name
                                 }
                         }
@@ -2604,12 +2604,12 @@ func TestToFastJSONFilterOrOffset(t *testing.T) {
 		js)
 }
 
-func TestToFastJSONFilterGeqName(t *testing.T) {
+func TestToFastJSONFiltergeName(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
 			me(id:0x01) {
-				friend @filter(geq(name, "Rick")) {
+				friend @filter(ge(name, "Rick")) {
 					name
 				}
 			}
@@ -2641,14 +2641,14 @@ func TestToFastJSONFilteLtAlias(t *testing.T) {
 		js)
 }
 
-func TestToFastJSONFilterGeq(t *testing.T) {
+func TestToFastJSONFilterge(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
 			me(id:0x01) {
 				name
 				gender
-				friend @filter(geq(dob, "1909-05-05")) {
+				friend @filter(ge(dob, "1909-05-05")) {
 					name
 				}
 			}
@@ -2681,14 +2681,14 @@ func TestToFastJSONFilterGt(t *testing.T) {
 		js)
 }
 
-func TestToFastJSONFilterLeq(t *testing.T) {
+func TestToFastJSONFilterle(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
 			me(id:0x01) {
 				name
 				gender
-				friend @filter(leq(dob, "1909-01-10")) {
+				friend @filter(le(dob, "1909-01-10")) {
 					name
 				}
 			}
@@ -2883,14 +2883,14 @@ func TestToFastJSONOrderNameError(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestToFastJSONFilterLeqOrder(t *testing.T) {
+func TestToFastJSONFilterleOrder(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
 			me(id:0x01) {
 				name
 				gender
-				friend(orderasc: dob) @filter(leq(dob, "1909-03-20")) {
+				friend(orderasc: dob) @filter(le(dob, "1909-03-20")) {
 					name
 				}
 			}
@@ -2903,14 +2903,14 @@ func TestToFastJSONFilterLeqOrder(t *testing.T) {
 		js)
 }
 
-func TestToFastJSONFilterGeqNoResult(t *testing.T) {
+func TestToFastJSONFiltergeNoResult(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
 			me(id:0x01) {
 				name
 				gender
-				friend @filter(geq(dob, "1999-03-20")) {
+				friend @filter(ge(dob, "1999-03-20")) {
 					name
 				}
 			}
@@ -2983,14 +2983,14 @@ func TestToFastJSONFilterOrFirstOffset(t *testing.T) {
 		js)
 }
 
-func TestToFastJSONFilterLeqFirstOffset(t *testing.T) {
+func TestToFastJSONFilterleFirstOffset(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
 			me(id:0x01) {
 				name
 				gender
-				friend(offset:1, first:1) @filter(leq(dob, "1909-03-20")) {
+				friend(offset:1, first:1) @filter(le(dob, "1909-03-20")) {
 					name
 				}
 			}
@@ -3125,7 +3125,7 @@ func TestCountReverseFunc(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	query := `
 		{
-			me(func: geq(count(~friend), 2)) {
+			me(func: ge(count(~friend), 2)) {
 				name
 				count(~friend)
 			}
@@ -3141,7 +3141,7 @@ func TestCountReverseFilter(t *testing.T) {
 	populateGraph(t)
 	query := `
 		{
-			me(func: anyofterms(name, "Glenn Michonne Rick")) @filter(geq(count(~friend), 2)) {
+			me(func: anyofterms(name, "Glenn Michonne Rick")) @filter(ge(count(~friend), 2)) {
 				name
 				count(~friend)
 			}
@@ -4161,7 +4161,7 @@ func TestGeneratorMultiRootFilter1(t *testing.T) {
 	populateGraph(t)
 	query := `
     {
-			me(func:anyofterms(name, "Daryl Rick Glenn")) @filter(leq(dob, "1909-01-10")) {
+			me(func:anyofterms(name, "Daryl Rick Glenn")) @filter(le(dob, "1909-01-10")) {
         name
       }
     }
@@ -4174,7 +4174,7 @@ func TestGeneratorMultiRootFilter2(t *testing.T) {
 	populateGraph(t)
 	query := `
     {
-			me(func:anyofterms(name, "Michonne Rick Glenn")) @filter(geq(dob, "1909-01-10")) {
+			me(func:anyofterms(name, "Michonne Rick Glenn")) @filter(ge(dob, "1909-01-10")) {
         name
       }
     }
@@ -4187,7 +4187,7 @@ func TestGeneratorMultiRootFilter3(t *testing.T) {
 	populateGraph(t)
 	query := `
     {
-			me(func:anyofterms(name, "Michonne Rick Glenn")) @filter(anyofterms(name, "Glenn") and geq(dob, "1909-01-10")) {
+			me(func:anyofterms(name, "Michonne Rick Glenn")) @filter(anyofterms(name, "Glenn") and ge(dob, "1909-01-10")) {
         name
       }
     }
@@ -4212,11 +4212,11 @@ func TestGeneratorRootFilterOnCountGt(t *testing.T) {
 	require.JSONEq(t, `{"me":[{"name":"Michonne"}]}`, js)
 }
 
-func TestGeneratorRootFilterOnCountLeq(t *testing.T) {
+func TestGeneratorRootFilterOnCountle(t *testing.T) {
 	populateGraph(t)
 	query := `
                 {
-                        me(func:anyofterms(name, "Michonne Rick")) @filter(leq(count(friend), 2)) {
+                        me(func:anyofterms(name, "Michonne Rick")) @filter(le(count(friend), 2)) {
                                 name
                         }
                 }
@@ -5118,7 +5118,7 @@ func TestFilterNonIndexedPredicateFail(t *testing.T) {
 	query := `
 		{
 			me(id:0x01) {
-				friend @filter(leq(age, 30)) {
+				friend @filter(le(age, 30)) {
 					_uid_
 					name
 					age
@@ -5363,11 +5363,11 @@ func TestBoolIndexEqRoot2(t *testing.T) {
 		js)
 }
 
-func TestBoolIndexGeqRoot(t *testing.T) {
+func TestBoolIndexgeRoot(t *testing.T) {
 	populateGraph(t)
 	q := `
 		{
-			me(func: geq(alive, true)) {
+			me(func: ge(alive, true)) {
 				name
 				alive
 				friend {
@@ -5380,7 +5380,7 @@ func TestBoolIndexGeqRoot(t *testing.T) {
 	var l Latency
 	ctx := context.Background()
 	_, err := ProcessQuery(ctx, res, &l)
-	require.Equal(t, "Only eq operator defined for type bool. Got: geq", err.Error())
+	require.Equal(t, "Only eq operator defined for type bool. Got: ge", err.Error())
 }
 
 func TestBoolIndexEqChild(t *testing.T) {
