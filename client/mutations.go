@@ -110,8 +110,13 @@ func (a *allocator) assignOrGet(id string) (uid uint64, isNew bool,
 	}
 	var buf [20]byte
 	n := binary.PutUvarint(buf[:], uid)
-	go a.kv.Set([]byte(id), buf[:n])
 	a.ids[id] = uid
+	go func() {
+		a.kv.Set([]byte(id), buf[:n])
+		a.Lock()
+		defer a.Unlock()
+		delete(a.ids, id)
+	}()
 	isNew = true
 	err = nil
 	return

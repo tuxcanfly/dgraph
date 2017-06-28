@@ -241,8 +241,13 @@ func main() {
 
 	// wait for schema changes to be done before starting mutations
 	time.Sleep(1 * time.Second)
+	pendingFiles := make(chan struct{}, 3)
 	for _, file := range filesList {
-		processFile(file, dgraphClient)
+		pendingFiles <- struct{}{}
+		go func(file string) {
+			processFile(file, dgraphClient)
+			<-pendingFiles
+		}(file)
 	}
 	dgraphClient.BatchFlush()
 
