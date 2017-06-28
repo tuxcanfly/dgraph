@@ -18,7 +18,6 @@
 package worker
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"strconv"
@@ -82,7 +81,7 @@ func ProcessTaskOverNetwork(ctx context.Context, q *protos.Query) (*protos.Resul
 	reply, err := c.ServeTask(ctx, q)
 	if err != nil {
 		if tr, ok := trace.FromContext(ctx); ok {
-			tr.LazyPrintf(fmt.Sprintf("Error while calling Worker.ServeTask: %v", err))
+			tr.LazyPrintf("Error while calling Worker.ServeTask: %v", err)
 		}
 		return &emptyResult, err
 	}
