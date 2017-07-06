@@ -55,15 +55,42 @@ function quit {
 }
 
 function run_index_test {
-	X=$1
+  local max_attempts=${ATTEMPTS-5}
+  local timeout=${TIMEOUT-1}
+  local attempt=0
+  local exitCode=0
+
+  X=$1
 	GREPFOR=$2
 	ANS=$3
-    N=`curl localhost:8080/query -XPOST -d @${X}.in 2> /dev/null | python -m json.tool | grep $GREPFOR | wc -l`
-	if [[ ! "$N" -eq "$ANS" ]]; then
-	  echo "Index test failed: ${X}  Expected: $ANS  Got: $N"
+  echo "Running test: ${X}"
+  while (( $attempt < $max_attempts ))
+  do
+    set +e
+    N=`curl -s localhost:8080/query -XPOST -d @${X}.in`
+    exitCode=$?
+    set -e
+
+    if [[ $exitCode == 0 ]]
+    then
+      break
+    fi
+
+    echo "Failure! Retrying in $timeout.." 1>&2
+    sleep $timeout
+    attempt=$(( attempt + 1 ))
+    timeout=$(( timeout * 2 ))
+  done
+
+  NUM=$(echo $N | python -m json.tool | grep $GREPFOR | wc -l)
+	if [[ ! "$NUM" -eq "$ANS" ]]; then
+	  echo "Index test failed: ${X}  Expected: $ANS  Got: $NUM"
 	  quit 1
-	fi
+  else
+    echo -e "Index test passed: ${X}\n"
+  fi
 }
+
 run_index_test basic name 138676
 run_index_test allof_the name 25431
 run_index_test allof_the_a name 367
@@ -76,4 +103,5 @@ run_index_test gen_anyof_good_bad name 1103
 
 popd &> /dev/null
 
+echo -e "All tests ran fine. Exiting"
 quit 0
