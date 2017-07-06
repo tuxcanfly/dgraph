@@ -24,7 +24,7 @@ popd &> /dev/null
 
 pushd cmd/dgraph &> /dev/null
 go build .
-./dgraph -gentlecommit 1.0 -p $BUILD/p -w $BUILD/loader/w > $BUILD/server.log &
+./dgraph -gentlecommit 1.0 -p $BUILD/p -w $BUILD/loader/w -stw_ram_mb 6000 > $BUILD/server.log &
 popd &> /dev/null
 
 sleep 15
@@ -42,10 +42,6 @@ pushd cmd/dgraphloader &> /dev/null
 go build .
 ./dgraphloader -r $benchmark/goldendata.rdf.gz -x true
 popd &> /dev/null
-
-# Lets wait for stuff to be committed to RocksDB.
-# wait for index keys to sync to db
-sleep 120
 
 pushd $GOPATH/src/github.com/dgraph-io/dgraph/contrib/indextest &> /dev/null
 
