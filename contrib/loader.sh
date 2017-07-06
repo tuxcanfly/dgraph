@@ -45,7 +45,7 @@ popd &> /dev/null
 
 # Lets wait for stuff to be committed to RocksDB.
 # wait for index keys to sync to db
-sleep 120
+sleep 180
 
 pushd $GOPATH/src/github.com/dgraph-io/dgraph/contrib/indextest &> /dev/null
 
@@ -62,7 +62,9 @@ function run_index_test {
 	if [[ ! "$N" -eq "$ANS" ]]; then
 	  echo "Index test failed: ${X}  Expected: $ANS  Got: $N"
 	  quit 1
-	fi
+  else
+    echo "Index test passed: ${X}"
+  fi
 }
 run_index_test basic name 138676
 run_index_test allof_the name 25431
