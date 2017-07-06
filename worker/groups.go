@@ -90,6 +90,7 @@ func groups() *groupi {
 func StartRaftNodes(walDir string) {
 	gr = new(groupi)
 	gr.ctx, gr.cancel = context.WithCancel(context.Background())
+	gr.all = make(map[uint32]*servers)
 
 	if len(*myAddr) == 0 {
 		*myAddr = fmt.Sprintf("localhost:%d", workerPort())
@@ -230,9 +231,6 @@ func (g *groupi) newNode(groupId uint32, nodeId uint64, publicAddr string) *node
 func (g *groupi) Server(id uint64, groupId uint32) (rs server, found bool) {
 	g.RLock()
 	defer g.RUnlock()
-	if g.all == nil {
-		return server{}, false
-	}
 	sl := g.all[groupId]
 	if sl == nil {
 		return server{}, false
@@ -516,10 +514,6 @@ func (g *groupi) applyMembershipUpdate(raftIdx uint64, mm *protos.Membership) {
 	fmt.Println("----------------------------")
 	g.Lock()
 	defer g.Unlock()
-
-	if g.all == nil {
-		g.all = make(map[uint32]*servers)
-	}
 
 	sl := g.all[mm.GroupId]
 	if sl == nil {
